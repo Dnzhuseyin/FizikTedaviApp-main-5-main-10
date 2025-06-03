@@ -82,47 +82,6 @@ private val LightColorScheme = lightColorScheme(
     inversePrimary = md_theme_light_inversePrimary
 )
 
-// Eski renk adlarını yeni Material You renkleriyle eşleştirme
-// Ana renkler
-val Primary = md_theme_light_primary           // 0xFF0056D2 - Koyu Mavi
-val PrimaryLight = md_theme_light_primaryContainer  // 0xFFD4E3FF - Açık Mavi
-val PrimaryDark = md_theme_dark_primary        // 0xFFA6C8FF - Parlak Mavi
-
-// İkincil renkler
-val Secondary = md_theme_light_secondary       // 0xFF006E1D - Koyu Yeşil
-val SecondaryLight = md_theme_light_secondaryContainer // 0xFFB8F397 - Açık Yeşil
-val SecondaryDark = md_theme_dark_secondary    // 0xFF9DD67E - Parlak Yeşil
-
-// Yüzey ve arka plan renkleri
-val Surface = md_theme_light_surface          // 0xFFFEFBFF - Beyaz
-val SurfaceLight = md_theme_light_background   // 0xFFF3F7FF - Açık Mavi Beyaz
-val SurfaceDark = md_theme_dark_surface       // 0xFF121417 - Koyu Siyah
-val Background = md_theme_light_background    // 0xFFF3F7FF - Açık Mavi Beyaz
-val BackgroundLight = md_theme_light_surface   // 0xFFFEFBFF - Beyaz
-val BackgroundDark = md_theme_dark_background  // 0xFF1A1C22 - Koyu Siyah
-
-// Hata ve uyarı renkleri
-val Error = md_theme_light_error             // 0xFFBA1A1A - Kırmızı
-
-// Metin renkleri
-val TextPrimary = md_theme_light_onSurface    // 0xFF1A1C22 - Koyu Siyah
-val TextSecondary = md_theme_light_onSurfaceVariant // 0xFF42474E - Koyu Gri
-val TextHint = md_theme_light_outline         // 0xFF737983 - Orta Gri
-
-// Renk sistemi uyumluluğu için eski adlandırmalar
-val DarkBlue = md_theme_light_primary         // 0xFF0056D2 - Koyu Mavi
-val LightBlue = md_theme_light_primaryContainer  // 0xFFD4E3FF - Açık Mavi
-val MediumBlue = md_theme_light_tertiary      // 0xFF00629D - Koyu Turkuaz
-
-// Yeşil tonları
-val DarkGreen = md_theme_light_secondary      // 0xFF006E1D - Koyu Yeşil
-val MediumGreen = md_theme_light_secondary.copy(alpha = 0.8f) // Orta Yeşil
-val LightGreen = md_theme_light_secondaryContainer // 0xFFB8F397 - Açık Yeşil
-
-// Uyarı renkleri
-val WarningYellow = WarningOrange             // 0xFFFF9800 - Turuncu
-val ErrorRed = md_theme_light_error           // 0xFFBA1A1A - Kırmızı
-
 @Composable
 fun FizikTedaviAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(), // Use system dark theme setting by default

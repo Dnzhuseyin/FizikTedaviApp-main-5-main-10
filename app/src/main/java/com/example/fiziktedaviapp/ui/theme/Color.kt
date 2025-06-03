@@ -49,7 +49,7 @@ val GradientEnd = HealthGreen400
 // Status & Utility Colors
 val SuccessGreen = Color(0xFF00C853)
 val WarningOrange = Color(0xFFFF9800)
-val ErrorRed = Color(0xFFE53E3E)
+val ModernErrorRed = Color(0xFFE53E3E)
 val InfoBlue = Color(0xFF2196F3)
 
 // Surface & Background Enhanced
@@ -85,7 +85,7 @@ val md_theme_light_onTertiary = Color(0xFFFFFFFF)
 val md_theme_light_tertiaryContainer = WellnessTeal100
 val md_theme_light_onTertiaryContainer = WellnessTeal900
 
-val md_theme_light_error = ErrorRed
+val md_theme_light_error = ModernErrorRed
 val md_theme_light_errorContainer = Color(0xFFFFE6E6)
 val md_theme_light_onError = Color(0xFFFFFFFF)
 val md_theme_light_onErrorContainer = Color(0xFF5F2120)
@@ -133,9 +133,9 @@ val md_theme_dark_inverseOnSurface = Color(0xFF2D3135)
 val md_theme_dark_inverseSurface = Color(0xFFE4E6EA)
 val md_theme_dark_inversePrimary = PrimaryBlue500
 
-// Legacy Color Mappings for Compatibility
+// Legacy Compatibility Colors - To prevent compilation errors
 val Primary = md_theme_light_primary
-val PrimaryLight = md_theme_light_primaryContainer
+val PrimaryLight = md_theme_light_primaryContainer  
 val PrimaryDark = md_theme_dark_primary
 
 val Secondary = md_theme_light_secondary
@@ -150,6 +150,7 @@ val BackgroundLight = md_theme_light_surface
 val BackgroundDark = md_theme_dark_background
 
 val Error = md_theme_light_error
+val ErrorRed = ModernErrorRed
 
 val TextPrimary = md_theme_light_onSurface
 val TextSecondary = md_theme_light_onSurfaceVariant
@@ -164,4 +165,3 @@ val MediumGreen = HealthGreen400
 val LightGreen = md_theme_light_secondaryContainer
 
 val WarningYellow = WarningOrange
-val ErrorRed = md_theme_light_error

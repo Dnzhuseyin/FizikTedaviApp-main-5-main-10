@@ -600,7 +600,7 @@ fun FloatingEmergencyButton(
     PulseFloatingActionButton(
         icon = Icons.Default.Phone,
         onClick = onClick,
-        backgroundColor = ErrorRed,
+        backgroundColor = ModernErrorRed,
         contentColor = Color.White,
         size = 64.dp,
         isPulsing = true,
