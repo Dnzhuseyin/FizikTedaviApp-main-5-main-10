@@ -38,15 +38,8 @@ import kotlin.random.Random
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController) {
-    val scrollState = rememberScrollState()
-    
-    // Screen width for responsive layout adjustments
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
-    
     // Kullanıcı bilgileri (daha sonra viewModel'dan alınacak)
     val userName = "Ahmet Yılmaz"
-    val userRole = "Hasta"
     
     // Bugünün tarihi
     val currentDate = LocalDate.now()
@@ -83,7 +76,9 @@ fun DashboardScreen(navController: NavController) {
     
     val randomQuote = remember { motivationalQuotes[Random.nextInt(motivationalQuotes.size)] }
 
-    Box(
+    ResponsivePage(
+        backgroundColor = MaterialTheme.colorScheme.background,
+        scrollable = true,
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -95,69 +90,71 @@ fun DashboardScreen(navController: NavController) {
                     )
                 )
             )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            // Modern Header Section
-            ModernHeaderSection(
-                userName = userName,
-                formattedDate = formattedDate,
-                onProfileClick = { navController.navigate(Screen.Profile.route) },
-                onNotificationClick = { navController.navigate(Screen.Notifications.route) },
-                onSettingsClick = { navController.navigate(Screen.Settings.route) }
+    ) { config ->
+        // Floating Emergency Button için container
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column {
+                // Modern Header Section
+                ModernHeaderSection(
+                    userName = userName,
+                    formattedDate = formattedDate,
+                    onProfileClick = { navController.navigate(Screen.Profile.route) },
+                    onNotificationClick = { navController.navigate(Screen.Notifications.route) },
+                    onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                    config = config
+                )
+                
+                Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                
+                // Welcome Message with Glass Effect
+                WelcomeGlassCard(
+                    quote = randomQuote,
+                    config = config
+                )
+                
+                Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                
+                // Progress Summary Cards
+                ProgressSummarySection(
+                    completionPercentage = progressAnimation,
+                    completedExercises = completedExercises,
+                    totalExercises = totalExercises,
+                    streakDays = streakDays,
+                    totalPoints = totalPoints,
+                    config = config
+                )
+                
+                Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                
+                // Quick Actions Section
+                QuickActionsSection(
+                    navController = navController,
+                    config = config
+                )
+                
+                Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                
+                // Today's Exercise Card
+                TodaysExerciseCard(
+                    todaysExercises = todaysExercises,
+                    weeklyGoal = weeklyGoal,
+                    navController = navController,
+                    config = config
+                )
+                
+                // Bottom spacing for floating button
+                Spacer(modifier = Modifier.height(config.verticalSpacing(32.dp)))
+            }
+            
+            // Floating Emergency Button
+            FloatingEmergencyButton(
+                onClick = { navController.navigate(Screen.TherapistCall.route) },
+                config = config,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(config.componentPadding())
             )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Welcome Message with Glass Effect
-            WelcomeGlassCard(
-                quote = randomQuote,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Progress Summary Cards
-            ProgressSummarySection(
-                completionPercentage = progressAnimation,
-                completedExercises = completedExercises,
-                totalExercises = totalExercises,
-                streakDays = streakDays,
-                totalPoints = totalPoints,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Quick Actions Section
-            QuickActionsSection(
-                navController = navController,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Today's Exercise Card
-            TodaysExerciseCard(
-                todaysExercises = todaysExercises,
-                weeklyGoal = weeklyGoal,
-                navController = navController,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(100.dp)) // Space for bottom navigation
         }
-        
-        // Floating Emergency Button
-        FloatingEmergencyButton(
-            onClick = { navController.navigate(Screen.TherapistCall.route) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        )
     }
 }
 
@@ -167,82 +164,170 @@ fun ModernHeaderSection(
     formattedDate: String,
     onProfileClick: () -> Unit,
     onNotificationClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    config: ResponsiveConfig
 ) {
     GradientGlassCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
         gradientColors = listOf(
             PrimaryBlue400.copy(alpha = 0.15f),
             WellnessTeal400.copy(alpha = 0.1f),
             HealthGreen400.copy(alpha = 0.08f)
         ),
-        cornerRadius = 24.dp
+        cornerRadius = config.adaptiveHeight(
+            extraSmall = 16.dp,
+            compact = 20.dp,
+            medium = 24.dp,
+            expanded = 28.dp
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary700,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Hoş geldin,",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TextSecondary700
-                )
-                Text(
-                    text = userName,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary900
-                )
-            }
-            
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AnimatedIconButton(
-                    icon = Icons.Default.Notifications,
-                    onClick = onNotificationClick,
-                    backgroundColor = PrimaryBlue100,
-                    contentColor = PrimaryBlue700,
-                    size = 44.dp
-                )
-                
-                AnimatedIconButton(
-                    icon = Icons.Default.Settings,
-                    onClick = onSettingsClick,
-                    backgroundColor = HealthGreen100,
-                    contentColor = HealthGreen700,
-                    size = 44.dp
-                )
-                
-                // Profile Picture
-                Surface(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clickable(onClick = onProfileClick),
-                    shape = CircleShape,
-                    color = PrimaryBlue500,
-                    shadowElevation = 4.dp
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
+        when (config.screenSizeClass) {
+            ScreenSizeClass.EXTRA_SMALL -> {
+                // Çok küçük ekranlar için compact layout
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = userName.first().toString(),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary700
                         )
+                        
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            AnimatedIconButton(
+                                icon = Icons.Default.Notifications,
+                                onClick = onNotificationClick,
+                                backgroundColor = PrimaryBlue100,
+                                contentColor = PrimaryBlue700,
+                                size = 36.dp
+                            )
+                            
+                            // Profile Picture
+                            Surface(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clickable(onClick = onProfileClick),
+                                shape = CircleShape,
+                                color = PrimaryBlue500,
+                                shadowElevation = 2.dp
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = userName.first().toString(),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "Hoş geldin,",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary700
+                    )
+                    Text(
+                        text = userName,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary900
+                    )
+                }
+            }
+            else -> {
+                // Normal ve büyük ekranlar için standard layout
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary700,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(config.verticalSpacing(4.dp)))
+                        Text(
+                            text = "Hoş geldin,",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextSecondary700
+                        )
+                        Text(
+                            text = userName,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary900
+                        )
+                    }
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(config.componentPadding())
+                    ) {
+                        AnimatedIconButton(
+                            icon = Icons.Default.Notifications,
+                            onClick = onNotificationClick,
+                            backgroundColor = PrimaryBlue100,
+                            contentColor = PrimaryBlue700,
+                            size = config.adaptiveHeight(
+                                extraSmall = 40.dp,
+                                compact = 44.dp,
+                                medium = 48.dp,
+                                expanded = 52.dp
+                            )
+                        )
+                        
+                        AnimatedIconButton(
+                            icon = Icons.Default.Settings,
+                            onClick = onSettingsClick,
+                            backgroundColor = HealthGreen100,
+                            contentColor = HealthGreen700,
+                            size = config.adaptiveHeight(
+                                extraSmall = 40.dp,
+                                compact = 44.dp,
+                                medium = 48.dp,
+                                expanded = 52.dp
+                            )
+                        )
+                        
+                        // Profile Picture
+                        Surface(
+                            modifier = Modifier
+                                .size(
+                                    config.adaptiveHeight(
+                                        extraSmall = 44.dp,
+                                        compact = 48.dp,
+                                        medium = 52.dp,
+                                        expanded = 56.dp
+                                    )
+                                )
+                                .clickable(onClick = onProfileClick),
+                            shape = CircleShape,
+                            color = PrimaryBlue500,
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = userName.first().toString(),
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = when (config.screenSizeClass) {
+                                        ScreenSizeClass.EXTRA_SMALL -> 14.sp
+                                        ScreenSizeClass.COMPACT -> 16.sp
+                                        ScreenSizeClass.MEDIUM -> 18.sp
+                                        ScreenSizeClass.EXPANDED -> 20.sp
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -253,51 +338,103 @@ fun ModernHeaderSection(
 @Composable
 fun WelcomeGlassCard(
     quote: String,
-    modifier: Modifier = Modifier
+    config: ResponsiveConfig
 ) {
     GradientGlassCard(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         gradientColors = listOf(
             WellnessTeal400.copy(alpha = 0.12f),
             HealthGreen400.copy(alpha = 0.08f),
             Color.Transparent
         ),
-        cornerRadius = 20.dp
+        cornerRadius = config.adaptiveHeight(
+            extraSmall = 16.dp,
+            compact = 20.dp,
+            medium = 24.dp,
+            expanded = 28.dp
+        )
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(64.dp),
-                shape = CircleShape,
-                color = WellnessTeal100
-            ) {
-                Icon(
-                    imageVector = Icons.Default.EmojiEvents,
-                    contentDescription = null,
-                    tint = WellnessTeal700,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .padding(16.dp)
-                )
+        when (config.screenSizeClass) {
+            ScreenSizeClass.EXTRA_SMALL -> {
+                // Küçük ekranlar için dikey layout
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Surface(
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        color = WellnessTeal100
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = WellnessTeal700,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(config.verticalSpacing(8.dp)))
+                    
+                    Text(
+                        text = "Günün Motivasyonu",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = WellnessTeal700,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = quote,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextPrimary900,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Günün Motivasyonu",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = WellnessTeal700
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = quote,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TextPrimary900,
-                    fontWeight = FontWeight.Medium
-                )
+            else -> {
+                // Normal ve büyük ekranlar için yatay layout
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(
+                            config.adaptiveHeight(
+                                extraSmall = 48.dp,
+                                compact = 56.dp,
+                                medium = 64.dp,
+                                expanded = 72.dp
+                            )
+                        ),
+                        shape = CircleShape,
+                        color = WellnessTeal100
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.EmojiEvents,
+                            contentDescription = null,
+                            tint = WellnessTeal700,
+                            modifier = Modifier.padding(config.componentPadding(12.dp))
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(config.componentPadding()))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Günün Motivasyonu",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = WellnessTeal700
+                        )
+                        Spacer(modifier = Modifier.height(config.verticalSpacing(4.dp)))
+                        Text(
+                            text = quote,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextPrimary900,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
         }
     }
@@ -310,9 +447,9 @@ fun ProgressSummarySection(
     totalExercises: Int,
     streakDays: Int,
     totalPoints: Int,
-    modifier: Modifier = Modifier
+    config: ResponsiveConfig
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = Modifier) {
         // Main Progress Card
         AnimatedProgressCard(
             title = "Bugünkü İlerleme",
@@ -323,40 +460,44 @@ fun ProgressSummarySection(
             modifier = Modifier.fillMaxWidth()
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(config.verticalSpacing(16.dp)))
         
-        // Stats Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatCard(
-                title = "Tamamlanan",
-                value = "$completedExercises/$totalExercises",
-                subtitle = "egzersiz",
-                icon = Icons.Default.CheckCircle,
-                color = HealthGreen500,
-                modifier = Modifier.weight(1f)
-            )
-            
-            StatCard(
-                title = "Seri",
-                value = "$streakDays",
-                subtitle = "gün",
-                icon = Icons.Default.LocalFireDepartment,
-                color = WarningOrange,
-                modifier = Modifier.weight(1f)
-            )
-            
-            StatCard(
-                title = "Puan",
-                value = "$totalPoints",
-                subtitle = "toplam",
-                icon = Icons.Default.Stars,
-                color = PrimaryBlue500,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        // Stats Grid - Responsive layout
+        ResponsiveStatsGrid(
+            items = listOf(
+                {
+                    StatCard(
+                        title = "Tamamlanan",
+                        value = "$completedExercises/$totalExercises",
+                        subtitle = "egzersiz",
+                        icon = Icons.Default.CheckCircle,
+                        color = HealthGreen500,
+                        config = config
+                    )
+                },
+                {
+                    StatCard(
+                        title = "Seri",
+                        value = "$streakDays",
+                        subtitle = "gün",
+                        icon = Icons.Default.LocalFireDepartment,
+                        color = WarningOrange,
+                        config = config
+                    )
+                },
+                {
+                    StatCard(
+                        title = "Puan",
+                        value = "$totalPoints",
+                        subtitle = "toplam",
+                        icon = Icons.Default.Stars,
+                        color = PrimaryBlue500,
+                        config = config
+                    )
+                }
+            ),
+            config = config
+        )
     }
 }
 
@@ -367,47 +508,64 @@ fun StatCard(
     subtitle: String,
     icon: ImageVector,
     color: Color,
-    modifier: Modifier = Modifier
+    config: ResponsiveConfig
 ) {
     GradientGlassCard(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         gradientColors = listOf(
             color.copy(alpha = 0.1f),
             color.copy(alpha = 0.05f),
             Color.Transparent
         ),
-        cornerRadius = 16.dp
+        cornerRadius = config.adaptiveHeight(
+            extraSmall = 12.dp,
+            compact = 16.dp,
+            medium = 20.dp,
+            expanded = 24.dp
+        )
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(config.verticalSpacing(4.dp))
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
                 tint = color,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(
+                    config.adaptiveHeight(
+                        extraSmall = 20.dp,
+                        compact = 24.dp,
+                        medium = 28.dp,
+                        expanded = 32.dp
+                    )
+                )
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineSmall,
+                style = when (config.screenSizeClass) {
+                    ScreenSizeClass.EXTRA_SMALL -> MaterialTheme.typography.titleMedium
+                    else -> MaterialTheme.typography.headlineSmall
+                },
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary900
+                color = TextPrimary900,
+                textAlign = TextAlign.Center
             )
             
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary700
+                color = TextSecondary700,
+                textAlign = TextAlign.Center
             )
             
             Text(
                 text = title,
                 style = MaterialTheme.typography.labelSmall,
                 color = color,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -416,48 +574,98 @@ fun StatCard(
 @Composable
 fun QuickActionsSection(
     navController: NavController,
-    modifier: Modifier = Modifier
+    config: ResponsiveConfig
 ) {
-    Column(modifier = modifier) {
+    Column(modifier = Modifier) {
         Text(
             text = "Hızlı Eylemler",
-            style = MaterialTheme.typography.titleLarge,
+            style = when (config.screenSizeClass) {
+                ScreenSizeClass.EXTRA_SMALL -> MaterialTheme.typography.titleMedium
+                else -> MaterialTheme.typography.titleLarge
+            },
             fontWeight = FontWeight.Bold,
             color = TextPrimary900,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = config.verticalSpacing())
         )
         
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 4.dp)
-        ) {
-            item {
-                ModernActionCard(
-                    title = "Egzersize Başla",
-                    subtitle = "Günlük programını tamamla",
-                    icon = Icons.Default.PlayArrow,
-                    colors = listOf(HealthGreen400, HealthGreen600),
-                    onClick = { navController.navigate(Screen.ExerciseList.route) }
-                )
+        when (config.screenSizeClass) {
+            ScreenSizeClass.EXTRA_SMALL, ScreenSizeClass.COMPACT -> {
+                // Küçük ekranlarda horizontal scroll
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(config.componentPadding()),
+                    contentPadding = PaddingValues(horizontal = 4.dp)
+                ) {
+                    item {
+                        ModernActionCard(
+                            title = "Egzersize Başla",
+                            subtitle = "Günlük programını tamamla",
+                            icon = Icons.Default.PlayArrow,
+                            colors = listOf(HealthGreen400, HealthGreen600),
+                            onClick = { navController.navigate(Screen.ExerciseList.route) },
+                            config = config
+                        )
+                    }
+                    
+                    item {
+                        ModernActionCard(
+                            title = "İlerleme",
+                            subtitle = "Geçmiş performansını gör",
+                            icon = Icons.Default.Timeline,
+                            colors = listOf(PrimaryBlue400, PrimaryBlue600),
+                            onClick = { navController.navigate(Screen.ExerciseCalendar.route) },
+                            config = config
+                        )
+                    }
+                    
+                    item {
+                        ModernActionCard(
+                            title = "Sıralama",
+                            subtitle = "Liderlik tablosunu incele",
+                            icon = Icons.Default.EmojiEvents,
+                            colors = listOf(WarningOrange, Color(0xFFF57C00)),
+                            onClick = { navController.navigate(Screen.Leaderboard.route) },
+                            config = config
+                        )
+                    }
+                }
             }
-            
-            item {
-                ModernActionCard(
-                    title = "İlerleme",
-                    subtitle = "Geçmiş performansını gör",
-                    icon = Icons.Default.Timeline,
-                    colors = listOf(PrimaryBlue400, PrimaryBlue600),
-                    onClick = { navController.navigate(Screen.ExerciseCalendar.route) }
-                )
-            }
-            
-            item {
-                ModernActionCard(
-                    title = "Sıralama",
-                    subtitle = "Liderlik tablosunu incele",
-                    icon = Icons.Default.EmojiEvents,
-                    colors = listOf(WarningOrange, Color(0xFFF57C00)),
-                    onClick = { navController.navigate(Screen.Leaderboard.route) }
+            else -> {
+                // Büyük ekranlarda grid
+                ResponsiveGrid(
+                    items = listOf(
+                        {
+                            ModernActionCard(
+                                title = "Egzersize Başla",
+                                subtitle = "Günlük programını tamamla",
+                                icon = Icons.Default.PlayArrow,
+                                colors = listOf(HealthGreen400, HealthGreen600),
+                                onClick = { navController.navigate(Screen.ExerciseList.route) },
+                                config = config
+                            )
+                        },
+                        {
+                            ModernActionCard(
+                                title = "İlerleme",
+                                subtitle = "Geçmiş performansını gör",
+                                icon = Icons.Default.Timeline,
+                                colors = listOf(PrimaryBlue400, PrimaryBlue600),
+                                onClick = { navController.navigate(Screen.ExerciseCalendar.route) },
+                                config = config
+                            )
+                        },
+                        {
+                            ModernActionCard(
+                                title = "Sıralama",
+                                subtitle = "Liderlik tablosunu incele",
+                                icon = Icons.Default.EmojiEvents,
+                                colors = listOf(WarningOrange, Color(0xFFF57C00)),
+                                onClick = { navController.navigate(Screen.Leaderboard.route) },
+                                config = config
+                            )
+                        }
+                    ),
+                    minItemWidth = 180.dp,
+                    config = config
                 )
             }
         }
@@ -471,13 +679,35 @@ fun ModernActionCard(
     icon: ImageVector,
     colors: List<Color>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    config: ResponsiveConfig
 ) {
+    val cardWidth = when (config.screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> 160.dp
+        ScreenSizeClass.COMPACT -> 180.dp
+        ScreenSizeClass.MEDIUM -> 200.dp
+        ScreenSizeClass.EXPANDED -> 220.dp
+    }
+    
+    val cardHeight = config.adaptiveHeight(
+        extraSmall = 100.dp,
+        compact = 120.dp,
+        medium = 140.dp,
+        expanded = 160.dp
+    )
+
     Surface(
         modifier = modifier
-            .width(200.dp)
-            .height(120.dp),
-        shape = RoundedCornerShape(20.dp),
+            .width(cardWidth)
+            .height(cardHeight),
+        shape = RoundedCornerShape(
+            config.adaptiveHeight(
+                extraSmall = 16.dp,
+                compact = 20.dp,
+                medium = 24.dp,
+                expanded = 28.dp
+            )
+        ),
         shadowElevation = 8.dp,
         onClick = onClick
     ) {
@@ -494,21 +724,31 @@ fun ModernActionCard(
                         )
                     )
                 )
-                .padding(20.dp)
+                .padding(config.componentPadding())
         ) {
             Column {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     tint = Color.White,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(
+                        config.adaptiveHeight(
+                            extraSmall = 24.dp,
+                            compact = 28.dp,
+                            medium = 32.dp,
+                            expanded = 36.dp
+                        )
+                    )
                 )
                 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(config.verticalSpacing(8.dp)))
                 
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = when (config.screenSizeClass) {
+                        ScreenSizeClass.EXTRA_SMALL -> MaterialTheme.typography.titleSmall
+                        else -> MaterialTheme.typography.titleMedium
+                    },
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
@@ -528,65 +768,128 @@ fun TodaysExerciseCard(
     todaysExercises: Int,
     weeklyGoal: Int,
     navController: NavController,
-    modifier: Modifier = Modifier
+    config: ResponsiveConfig
 ) {
     GradientGlassCard(
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth(),
         onClick = { navController.navigate(Screen.ExerciseList.route) },
         gradientColors = listOf(
             PrimaryBlue400.copy(alpha = 0.12f),
             WellnessTeal400.copy(alpha = 0.08f),
             Color.Transparent
         ),
-        cornerRadius = 20.dp
+        cornerRadius = config.adaptiveHeight(
+            extraSmall = 16.dp,
+            compact = 20.dp,
+            medium = 24.dp,
+            expanded = 28.dp
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Bugünkü Egzersizler",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary900
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "$todaysExercises egzersiz hazır",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TextSecondary700
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                GradientButton(
-                    text = "Başla",
-                    onClick = { navController.navigate(Screen.ExerciseList.route) },
-                    gradientColors = listOf(HealthGreen400, HealthGreen600),
-                    leadingIcon = Icons.Default.PlayArrow,
-                    modifier = Modifier.fillMaxWidth()
-                )
+        when (config.screenSizeClass) {
+            ScreenSizeClass.EXTRA_SMALL -> {
+                // Küçük ekranlar için dikey layout
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Surface(
+                        modifier = Modifier.size(64.dp),
+                        shape = CircleShape,
+                        color = HealthGreen100
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FitnessCenter,
+                            contentDescription = null,
+                            tint = HealthGreen600,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                    
+                    Text(
+                        text = "Bugünkü Egzersizler",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary900,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "$todaysExercises egzersiz hazır",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary700,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                    
+                    GradientButton(
+                        text = "Başla",
+                        onClick = { navController.navigate(Screen.ExerciseList.route) },
+                        gradientColors = listOf(HealthGreen400, HealthGreen600),
+                        leadingIcon = Icons.Default.PlayArrow,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Surface(
-                modifier = Modifier.size(80.dp),
-                shape = CircleShape,
-                color = HealthGreen100
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FitnessCenter,
-                    contentDescription = null,
-                    tint = HealthGreen600,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .padding(20.dp)
-                )
+            else -> {
+                // Normal ve büyük ekranlar için yatay layout
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Bugünkü Egzersizler",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary900
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "$todaysExercises egzersiz hazır",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextSecondary700
+                        )
+                        
+                        Spacer(modifier = Modifier.height(config.verticalSpacing()))
+                        
+                        GradientButton(
+                            text = "Başla",
+                            onClick = { navController.navigate(Screen.ExerciseList.route) },
+                            gradientColors = listOf(HealthGreen400, HealthGreen600),
+                            leadingIcon = Icons.Default.PlayArrow,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(config.componentPadding()))
+                    
+                    Surface(
+                        modifier = Modifier.size(
+                            config.adaptiveHeight(
+                                extraSmall = 64.dp,
+                                compact = 72.dp,
+                                medium = 80.dp,
+                                expanded = 88.dp
+                            )
+                        ),
+                        shape = CircleShape,
+                        color = HealthGreen100
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FitnessCenter,
+                            contentDescription = null,
+                            tint = HealthGreen600,
+                            modifier = Modifier.padding(config.componentPadding(16.dp))
+                        )
+                    }
+                }
             }
         }
     }
@@ -595,14 +898,22 @@ fun TodaysExerciseCard(
 @Composable
 fun FloatingEmergencyButton(
     onClick: () -> Unit,
+    config: ResponsiveConfig,
     modifier: Modifier = Modifier
 ) {
+    val buttonSize = config.adaptiveHeight(
+        extraSmall = 56.dp,
+        compact = 64.dp,
+        medium = 72.dp,
+        expanded = 80.dp
+    )
+    
     PulseFloatingActionButton(
         icon = Icons.Default.Phone,
         onClick = onClick,
         backgroundColor = ModernErrorRed,
         contentColor = Color.White,
-        size = 64.dp,
+        size = buttonSize,
         isPulsing = true,
         modifier = modifier
     )

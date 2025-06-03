@@ -30,177 +30,202 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.widthIn
 
-// Ekran boyutu kategorileri
+// Gelişmiş ekran boyutu kategorileri
 enum class ScreenSizeClass {
-    COMPACT,    // Küçük telefonlar (0-600dp)
-    MEDIUM,     // Büyük telefonlar ve küçük tabletler (600-840dp)
-    EXPANDED    // Tabletler ve daha büyük ekranlar (840dp+)
+    COMPACT,        // Küçük telefonlar (0-600dp)
+    MEDIUM,         // Büyük telefonlar ve küçük tabletler (600-840dp) 
+    EXPANDED,       // Tabletler ve daha büyük ekranlar (840dp+)
+    EXTRA_SMALL     // Çok küçük telefonlar (0-360dp)
 }
 
-// Lokal kompozisyon için güncel ekran boyutu bilgisini sağlar
+// Orientation detection
+enum class ScreenOrientation {
+    PORTRAIT,
+    LANDSCAPE
+}
+
+// Responsive configuration
+data class ResponsiveConfig(
+    val screenSizeClass: ScreenSizeClass,
+    val orientation: ScreenOrientation,
+    val screenWidth: Dp,
+    val screenHeight: Dp,
+    val isTablet: Boolean,
+    val fontScale: Float,
+    val paddingScale: Float,
+    val spacingScale: Float
+)
+
+// Composition locals
 val LocalScreenSizeClass = compositionLocalOf { ScreenSizeClass.COMPACT }
+val LocalResponsiveConfig = compositionLocalOf { 
+    ResponsiveConfig(
+        screenSizeClass = ScreenSizeClass.COMPACT,
+        orientation = ScreenOrientation.PORTRAIT,
+        screenWidth = 360.dp,
+        screenHeight = 640.dp,
+        isTablet = false,
+        fontScale = 1f,
+        paddingScale = 1f,
+        spacingScale = 1f
+    )
+}
 
 /**
- * Ekran boyutuna göre ScreenSizeClass değerini belirler
+ * Gelişmiş ekran boyutu belirleme fonksiyonu
  */
 @Composable
-fun determineScreenSizeClass(): ScreenSizeClass {
+fun determineResponsiveConfig(): ResponsiveConfig {
     val configuration = LocalConfiguration.current
     val widthDp = configuration.screenWidthDp.dp
+    val heightDp = configuration.screenHeightDp.dp
     
-    return when {
+    val screenSizeClass = when {
+        widthDp < 360.dp -> ScreenSizeClass.EXTRA_SMALL
         widthDp < 600.dp -> ScreenSizeClass.COMPACT
         widthDp < 840.dp -> ScreenSizeClass.MEDIUM
         else -> ScreenSizeClass.EXPANDED
     }
+    
+    val orientation = if (widthDp > heightDp) {
+        ScreenOrientation.LANDSCAPE
+    } else {
+        ScreenOrientation.PORTRAIT
+    }
+    
+    val isTablet = widthDp >= 600.dp
+    
+    // Adaptif ölçekleme faktörleri
+    val fontScale = when (screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> 0.85f
+        ScreenSizeClass.COMPACT -> 1.0f
+        ScreenSizeClass.MEDIUM -> 1.1f
+        ScreenSizeClass.EXPANDED -> 1.15f
+    }
+    
+    val paddingScale = when (screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> 0.75f
+        ScreenSizeClass.COMPACT -> 1.0f
+        ScreenSizeClass.MEDIUM -> 1.2f
+        ScreenSizeClass.EXPANDED -> 1.4f
+    }
+    
+    val spacingScale = when (screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> 0.8f
+        ScreenSizeClass.COMPACT -> 1.0f
+        ScreenSizeClass.MEDIUM -> 1.15f
+        ScreenSizeClass.EXPANDED -> 1.3f
+    }
+    
+    return ResponsiveConfig(
+        screenSizeClass = screenSizeClass,
+        orientation = orientation,
+        screenWidth = widthDp,
+        screenHeight = heightDp,
+        isTablet = isTablet,
+        fontScale = fontScale,
+        paddingScale = paddingScale,
+        spacingScale = spacingScale
+    )
 }
 
 /**
- * Responsive bir sayfa düzeni sağlayan bileşen.
- * Ekran boyutuna göre otomatik olarak düzeni ayarlar.
+ * Ana responsive sayfa wrapper'ı
  */
 @Composable
 fun ResponsivePage(
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    applySystemInsets: Boolean = true,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
     scrollable: Boolean = true,
-    applySystemInsets: Boolean = true,
-    content: @Composable ColumnScope.() -> Unit
+    maxWidth: Dp = 1200.dp,
+    content: @Composable ColumnScope.(ResponsiveConfig) -> Unit
 ) {
-    val screenSizeClass = determineScreenSizeClass()
+    val config = determineResponsiveConfig()
     
-    // Ekran boyutuna göre padding değerlerini ayarla
-    val horizontalPadding = when (screenSizeClass) {
-        ScreenSizeClass.COMPACT -> 16.dp
-        ScreenSizeClass.MEDIUM -> 24.dp
-        ScreenSizeClass.EXPANDED -> 32.dp
-    }
+    // Adaptif padding değerleri
+    val horizontalPadding = (16.dp * config.paddingScale).coerceAtLeast(8.dp)
+    val verticalPadding = (8.dp * config.paddingScale).coerceAtLeast(4.dp)
     
-    // Sistem insetlerini hesapla
+    // System insets
     val statusBarPadding = if (applySystemInsets) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    } else {
-        0.dp
-    }
+    } else 0.dp
     
     val navigationBarPadding = if (applySystemInsets) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    } else {
-        0.dp
-    }
+    } else 0.dp
     
-    // ContentPadding'i ekran boyutuna göre ayarla
-    val topPadding = contentPadding.calculateTopPadding() + statusBarPadding
-    val bottomPadding = contentPadding.calculateBottomPadding() + navigationBarPadding
-    
-    val finalPadding = PaddingValues(
-        start = horizontalPadding,
-        top = topPadding,
-        end = horizontalPadding,
-        bottom = bottomPadding
+    // Font scaling için custom density
+    val scaledDensity = Density(
+        density = LocalDensity.current.density,
+        fontScale = LocalDensity.current.fontScale * config.fontScale
     )
     
-    CompositionLocalProvider(LocalScreenSizeClass provides screenSizeClass) {
+    CompositionLocalProvider(
+        LocalScreenSizeClass provides config.screenSizeClass,
+        LocalResponsiveConfig provides config,
+        LocalDensity provides scaledDensity
+    ) {
         Surface(
             modifier = modifier.fillMaxSize(),
             color = backgroundColor
         ) {
-            if (scrollable) {
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(finalPadding)
-                        .verticalScroll(scrollState),
-                    horizontalAlignment = horizontalAlignment,
-                    verticalArrangement = verticalArrangement
-                ) {
-                    content()
-                }
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(finalPadding),
-                    horizontalAlignment = horizontalAlignment,
-                    verticalArrangement = verticalArrangement
-                ) {
-                    content()
-                }
-            }
-        }
-    }
-}
-
-/**
- * Ekran boyutuna göre adaptif görünüm sunan bileşen
- * Küçük ekranlarda dikey, büyük ekranlarda yatay görünüm sağlar
- */
-@Composable
-fun AdaptiveLayout(
-    modifier: Modifier = Modifier,
-    verticalAlignment: Alignment.Vertical = Alignment.Top,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    verticalSpacing: Dp = 16.dp,
-    horizontalSpacing: Dp = 24.dp,
-    firstContent: @Composable BoxScope.() -> Unit,
-    secondContent: @Composable BoxScope.() -> Unit
-) {
-    val screenSizeClass = LocalScreenSizeClass.current
-    
-    when (screenSizeClass) {
-        // Küçük ekranlarda dikey düzen
-        ScreenSizeClass.COMPACT -> {
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    firstContent()
-                }
-                
-                Spacer(modifier = Modifier.height(verticalSpacing))
-                
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    secondContent()
-                }
-            }
-        }
-        
-        // Orta ve büyük ekranlarda yatay düzen
-        else -> {
+            // Content container with max width constraint for large screens
             Row(
-                modifier = modifier.fillMaxWidth(),
-                verticalAlignment = verticalAlignment,
-                horizontalArrangement = horizontalArrangement
+                modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.Center
             ) {
                 Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .then(
+                            if (config.screenSizeClass == ScreenSizeClass.EXPANDED) {
+                                Modifier.widthIn(max = maxWidth)
+                            } else {
+                                Modifier.fillMaxWidth()
+                            }
+                        )
                 ) {
-                    firstContent()
-                }
-                
-                Spacer(modifier = Modifier.width(horizontalSpacing))
-                
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    secondContent()
+                    if (scrollable) {
+                        val scrollState = rememberScrollState()
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    start = horizontalPadding,
+                                    end = horizontalPadding,
+                                    top = verticalPadding + statusBarPadding,
+                                    bottom = verticalPadding + navigationBarPadding
+                                )
+                                .verticalScroll(scrollState),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            content(config)
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    start = horizontalPadding,
+                                    end = horizontalPadding,
+                                    top = verticalPadding + statusBarPadding,
+                                    bottom = verticalPadding + navigationBarPadding
+                                ),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            content(config)
+                        }
+                    }
                 }
             }
         }
@@ -208,42 +233,41 @@ fun AdaptiveLayout(
 }
 
 /**
- * Ekran boyutuna göre grid düzeni sağlayan bileşen
+ * Adaptif grid sistemi
  */
 @Composable
 fun ResponsiveGrid(
     modifier: Modifier = Modifier,
-    items: List<@Composable () -> Unit>
+    items: List<@Composable () -> Unit>,
+    minItemWidth: Dp = 280.dp,
+    spacing: Dp = 16.dp,
+    config: ResponsiveConfig = LocalResponsiveConfig.current
 ) {
-    val screenSizeClass = LocalScreenSizeClass.current
+    val scaledSpacing = (spacing * config.spacingScale).coerceAtLeast(8.dp)
+    val scaledMinWidth = minItemWidth * config.paddingScale
     
-    // Ekran boyutuna göre grid sütun sayısını belirle
-    val columns = when (screenSizeClass) {
-        ScreenSizeClass.COMPACT -> 1
-        ScreenSizeClass.MEDIUM -> 2
-        ScreenSizeClass.EXPANDED -> 3
-    }
+    // Dinamik sütun sayısı hesapla
+    val columns = maxOf(1, (config.screenWidth / (scaledMinWidth + scaledSpacing)).toInt())
     
-    // Grid düzeni için chunk'lara ayır
+    // Grid düzeni
     val chunkedItems = items.chunked(columns)
     
-    Column(modifier = modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(scaledSpacing)
+    ) {
         chunkedItems.forEach { rowItems ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(scaledSpacing)
             ) {
                 rowItems.forEach { item ->
-                    Box(
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Box(modifier = Modifier.weight(1f)) {
                         item()
                     }
                 }
                 
-                // Eksik hücreleri doldurmak için boş spacer'lar ekle
+                // Eksik hücreleri doldur
                 repeat(columns - rowItems.size) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -253,30 +277,162 @@ fun ResponsiveGrid(
 }
 
 /**
- * Ekran boyutuna göre maksimum genişlik kısıtlaması sağlayan bileşen
+ * Adaptif layout - Küçük ekranlarda dikey, büyük ekranlarda yatay
  */
 @Composable
-fun MaxWidthContainer(
+fun AdaptiveLayout(
     modifier: Modifier = Modifier,
-    maxWidth: Dp = 840.dp,
-    content: @Composable () -> Unit
+    config: ResponsiveConfig = LocalResponsiveConfig.current,
+    spacing: Dp = 16.dp,
+    firstContent: @Composable BoxScope.() -> Unit,
+    secondContent: @Composable BoxScope.() -> Unit
 ) {
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+    val scaledSpacing = (spacing * config.spacingScale).coerceAtLeast(8.dp)
+    
+    when (config.screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL, ScreenSizeClass.COMPACT -> {
+            // Küçük ekranlarda dikey düzen
+            Column(
+                modifier = modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(scaledSpacing),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    firstContent()
+                }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    secondContent()
+                }
+            }
+        }
+        else -> {
+            // Büyük ekranlarda yatay düzen
+            Row(
+                modifier = modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(scaledSpacing),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    firstContent()
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    secondContent()
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Stats grid için özel responsive düzen
+ */
+@Composable
+fun ResponsiveStatsGrid(
+    modifier: Modifier = Modifier,
+    items: List<@Composable () -> Unit>,
+    config: ResponsiveConfig = LocalResponsiveConfig.current
+) {
+    val columns = when (config.screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> 1
+        ScreenSizeClass.COMPACT -> if (config.orientation == ScreenOrientation.LANDSCAPE) 3 else 2
+        ScreenSizeClass.MEDIUM -> 3
+        ScreenSizeClass.EXPANDED -> 4
+    }
+    
+    val spacing = (12.dp * config.spacingScale).coerceAtLeast(8.dp)
+    val chunkedItems = items.chunked(columns)
+    
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(spacing)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (LocalScreenSizeClass.current == ScreenSizeClass.EXPANDED) {
-                        Modifier.width(maxWidth)
-                    } else {
-                        Modifier
+        chunkedItems.forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                rowItems.forEach { item ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        item()
                     }
-                ),
-        ) {
-            content()
+                }
+                
+                repeat(columns - rowItems.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Responsive spacing helper'ları
+ */
+@Composable
+fun ResponsiveConfig.verticalSpacing(base: Dp = 16.dp): Dp {
+    return (base * this.spacingScale).coerceAtLeast(8.dp)
+}
+
+@Composable
+fun ResponsiveConfig.horizontalSpacing(base: Dp = 16.dp): Dp {
+    return (base * this.spacingScale).coerceAtLeast(8.dp)
+}
+
+@Composable
+fun ResponsiveConfig.componentPadding(base: Dp = 16.dp): Dp {
+    return (base * this.paddingScale).coerceAtLeast(8.dp)
+}
+
+/**
+ * Responsive height helper
+ */
+@Composable
+fun ResponsiveConfig.adaptiveHeight(
+    extraSmall: Dp,
+    compact: Dp,
+    medium: Dp,
+    expanded: Dp
+): Dp {
+    return when (this.screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL -> extraSmall
+        ScreenSizeClass.COMPACT -> compact
+        ScreenSizeClass.MEDIUM -> medium
+        ScreenSizeClass.EXPANDED -> expanded
+    }
+}
+
+/**
+ * Quick Actions için responsive layout
+ */
+@Composable
+fun ResponsiveQuickActions(
+    modifier: Modifier = Modifier,
+    actions: List<@Composable () -> Unit>,
+    config: ResponsiveConfig = LocalResponsiveConfig.current
+) {
+    when (config.screenSizeClass) {
+        ScreenSizeClass.EXTRA_SMALL, ScreenSizeClass.COMPACT -> {
+            // Küçük ekranlarda scroll edilebilir horizontal layout
+            Row(
+                modifier = modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(config.horizontalSpacing())
+            ) {
+                actions.forEach { action ->
+                    Box(modifier = Modifier.width(180.dp * config.paddingScale)) {
+                        action()
+                    }
+                }
+            }
+        }
+        else -> {
+            // Büyük ekranlarda grid layout
+            ResponsiveGrid(
+                modifier = modifier,
+                items = actions,
+                minItemWidth = 200.dp,
+                config = config
+            )
         }
     }
 }
